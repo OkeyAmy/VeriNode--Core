@@ -221,6 +221,22 @@ fn test_mark_member_defaulted_and_slash_collateral() {
     token_client.mint(&user, &required_collateral);
     client.stake_collateral(&user, &circle_id, &required_collateral);
     
+    // Manually add member to storage so mark_member_defaulted can find them
+    env.as_contract(&contract_id, || {
+        let member_key = DataKey::Member(user.clone());
+        let member_info = sorosusu_contracts::Member {
+            address: user.clone(),
+            index: 0,
+            contribution_count: 0,
+            last_contribution_time: env.ledger().timestamp(),
+            status: MemberStatus::Active,
+            tier_multiplier: 1,
+            referrer: None,
+            buddy: None,
+        };
+        env.storage().instance().set(&member_key, &member_info);
+    });
+    
     // Mark member as defaulted
     client.mark_member_defaulted(&creator, &circle_id, &user);
     
