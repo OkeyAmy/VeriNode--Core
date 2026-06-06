@@ -1,5 +1,5 @@
 use soroban_sdk::testutils::Address as _;
-use soroban_sdk::{Address, Env, String, Symbol};
+use soroban_sdk::{token, Address, Env, String, Symbol};
 use sorosusu_contracts::{SoroSusu, SoroSusuClient, DataKey, CollateralStatus, MemberStatus};
 
 #[test]
