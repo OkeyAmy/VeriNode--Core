@@ -11,7 +11,9 @@ fn test_collateral_required_for_high_value_circles() {
     
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
@@ -31,11 +33,13 @@ fn test_collateral_required_for_high_value_circles() {
     );
     
     // Verify collateral is required
-    let circle_key = DataKey::Circle(circle_id);
-    let circle_info = env.storage().instance().get::<_, sorosusu_contracts::CircleInfo>(&circle_key).unwrap();
-    assert!(circle_info.requires_collateral);
-    assert_eq!(circle_info.collateral_bps, 2000); // 20%
-    assert_eq!(circle_info.total_cycle_value, high_amount * 5);
+    env.as_contract(&contract_id, || {
+        let circle_key = DataKey::Circle(circle_id);
+        let circle_info = env.storage().instance().get::<_, sorosusu_contracts::CircleInfo>(&circle_key).unwrap();
+        assert!(circle_info.requires_collateral);
+        assert_eq!(circle_info.collateral_bps, 2000); // 20%
+        assert_eq!(circle_info.total_cycle_value, high_amount * 5);
+    });
 }
 
 #[test]
@@ -47,7 +51,9 @@ fn test_collateral_not_required_for_low_value_circles() {
     
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
@@ -67,10 +73,12 @@ fn test_collateral_not_required_for_low_value_circles() {
     );
     
     // Verify collateral is not required
-    let circle_key = DataKey::Circle(circle_id);
-    let circle_info = env.storage().instance().get::<_, sorosusu_contracts::CircleInfo>(&circle_key).unwrap();
-    assert!(!circle_info.requires_collateral);
-    assert_eq!(circle_info.collateral_bps, 0);
+    env.as_contract(&contract_id, || {
+        let circle_key = DataKey::Circle(circle_id);
+        let circle_info = env.storage().instance().get::<_, sorosusu_contracts::CircleInfo>(&circle_key).unwrap();
+        assert!(!circle_info.requires_collateral);
+        assert_eq!(circle_info.collateral_bps, 0);
+    });
 }
 
 #[test]
@@ -83,7 +91,9 @@ fn test_stake_collateral() {
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
@@ -109,14 +119,20 @@ fn test_stake_collateral() {
     // Mock token transfer (in real test, you'd use token contract)
     // For this test, we'll assume the transfer succeeds
     
+    // Mint tokens to user for collateral staking
+    let token_client = token::StellarAssetClient::new(&env, &token);
+    token_client.mint(&user, &required_collateral);
+    
     // Stake collateral
     client.stake_collateral(&user, &circle_id, &required_collateral);
     
     // Verify collateral is staked
-    let collateral_key = DataKey::CollateralVault(user, circle_id);
-    let collateral_info = env.storage().instance().get::<_, sorosusu_contracts::CollateralInfo>(&collateral_key).unwrap();
-    assert_eq!(collateral_info.status, CollateralStatus::Staked);
-    assert_eq!(collateral_info.amount, required_collateral);
+    env.as_contract(&contract_id, || {
+        let collateral_key = DataKey::CollateralVault(user, circle_id);
+        let collateral_info = env.storage().instance().get::<_, sorosusu_contracts::CollateralInfo>(&collateral_key).unwrap();
+        assert_eq!(collateral_info.status, CollateralStatus::Staked);
+        assert_eq!(collateral_info.amount, required_collateral);
+    });
 }
 
 #[test]
@@ -129,7 +145,9 @@ fn test_join_circle_requires_collateral() {
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
@@ -173,7 +191,9 @@ fn test_mark_member_defaulted_and_slash_collateral() {
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
@@ -225,7 +245,9 @@ fn test_release_collateral_after_completion() {
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
@@ -283,7 +305,9 @@ fn test_insufficient_collateral_amount() {
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
@@ -324,7 +348,9 @@ fn test_double_collateral_staking() {
     let admin = Address::generate(&env);
     let creator = Address::generate(&env);
     let user = Address::generate(&env);
-    let token = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token = token_contract.address();
     let nft_contract = Address::generate(&env);
     
     // Initialize contract
