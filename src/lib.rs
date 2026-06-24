@@ -1,4 +1,5 @@
 #![no_std]
+pub mod reputation;
 use soroban_sdk::{
     contract, contractclient, contracterror, contractimpl, contracttype, token,
     Address, Env, String, Vec,
